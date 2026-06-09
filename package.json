@@ -1,13 +1,38 @@
 {
   "name": "uniapp-easyuse-plugins",
-  "description": "",
-  "private": true,
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
+  "description": "Uniapp easyuse plugin, include cache, logging, initialization, etc.",
+  "keywords": [
+    "uniapp",
+    "easyuse",
+    "plugin"
+  ],
   "author": "hayden",
   "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./global": {
+      "types": "./global.d.ts"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "global.d.ts"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --splitting --clean --publicDir public"
+  },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -15,5 +40,15 @@
       "onFail": "download"
     }
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@dcloudio/types": "^3.4.31",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vue": "^3.4.21"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.21"
+  }
 }

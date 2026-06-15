@@ -46,6 +46,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
     "@dcloudio/types": "^3.4.31",
+    "@dcloudio/uni-app": "3.0.0-alpha-5010320260611001",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
     "vue": "^3.4.21"

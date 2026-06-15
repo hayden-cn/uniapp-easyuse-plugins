@@ -9,8 +9,12 @@ import {
   getInitializationInstance,
   type InitializationSetup,
 } from "./initialization/initialization";
-import { createLogging } from "./logging/logging";
-import { createRequest, type RequestOptions } from "./request/request";
+import { createLogging, getLoggingInstance } from "./logging/logging";
+import {
+  createRequest,
+  getUniHttpRequestInstance,
+  type RequestOptions,
+} from "./request/request";
 import { createRouter, type RouterOptions } from "./router/router";
 import { createStore, type StoreOptions } from "./store/store";
 
@@ -76,3 +80,18 @@ export function registerPlugins(
 }
 
 export const cache = getCacheInstance();
+export const logging = getLoggingInstance();
+export const request = getUniHttpRequestInstance();
+
+export { useEventChannel } from "./hooks/useEventChannel";
+export {
+  usePageParameters,
+  useSimpleQueryString,
+} from "./hooks/usePageParameters";
+export {
+  useGlobalSelectorQuery,
+  useSelectorQuery,
+} from "./hooks/useSelectorQuery";
+export { useInit } from "./initialization/initialization";
+export { useRoute } from "./router/router";
+export { useStore } from "./store/store";

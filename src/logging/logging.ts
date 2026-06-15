@@ -37,7 +37,14 @@ class Logging {
     if (!Logging.instance) {
       Logging.instance = new UniLogging();
     }
-    app.config.globalProperties.$logging = Logging.instance;
+
+    Object.defineProperty(app.config.globalProperties, "$logging", {
+      get() {
+        return Logging.instance;
+      },
+      enumerable: true,
+      configurable: false,
+    });
   }
 }
 

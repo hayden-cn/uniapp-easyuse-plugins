@@ -10,6 +10,7 @@ import {
   toRef,
   toValue,
 } from "vue";
+import { getInitializationInstance } from "../initialization/initialization";
 import { pick } from "../utils";
 
 export interface UniRoute extends Omit<Required<UniPage>, "path"> {
@@ -60,9 +61,8 @@ class UniRouter {
 
   badge: Ref<TabBarBadge>;
 
-  constructor(options: { appConfig: UniAppPagesConfig; init: Promise<void> }) {
-    this.init = options.init;
-    const appConfig = options.appConfig;
+  constructor(appConfig: UniAppPagesConfig) {
+    this.init = getInitializationInstance().promise;
     this.globalStyle = appConfig.globalStyle ?? {};
     this.pages = appConfig.pages ?? [];
     this.tabBar = appConfig.tabBar ?? {
@@ -333,10 +333,7 @@ class Router {
     const { beforeEach, afterEach } = options;
 
     if (!Router.instance) {
-      Router.instance = new UniRouter({
-        appConfig: options.appPagesConfig || {},
-        init: app.config.globalProperties.$init.promise,
-      });
+      Router.instance = new UniRouter(options.appPagesConfig || {});
     }
 
     const instance = Router.instance;
@@ -354,16 +351,15 @@ class Router {
       enumerable: true,
       configurable: false,
     });
+
     app.provide(tabBarBadgeKey, toRef(instance.badge));
-
     app.provide(routerKey, shallowRef(instance));
-
     app.provide(mountedRouterKey, ref(false));
 
     // 等待页面初始化完成
-    app.config.globalProperties.$init.register({
+    getInitializationInstance().register({
       order: -1,
-      fn: async () => {
+      setup: async () => {
         let currentPage: any;
         while (!currentPage) {
           await new Promise((resolve) => setTimeout(resolve, 200));
@@ -382,8 +378,6 @@ class Router {
 export function createRouter() {
   return new Router();
 }
-
-// const mountedRouter = ref(false);
 
 export function useRoute() {
   const instance = inject(routerKey, shallowRef(Router.instance));

@@ -76,7 +76,14 @@ class Cache {
     if (!Cache.instance) {
       Cache.instance = new UniCache(options);
     }
-    app.config.globalProperties.$cache = Cache.instance;
+
+    Object.defineProperty(app.config.globalProperties, "$cache", {
+      get() {
+        return Cache.instance;
+      },
+      enumerable: true,
+      configurable: false,
+    });
   }
 }
 

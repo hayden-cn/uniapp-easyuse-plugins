@@ -1,5 +1,6 @@
 import type { App } from "vue";
-import type { LoggingInterface } from "../logging/logging";
+import { getInitializationInstance } from "../initialization/initialization";
+import { getLoggingInstance, type LoggingInterface } from "../logging/logging";
 import { castArray, cloneDeep, merge } from "../utils";
 
 export type RequestId = symbol | string | number;
@@ -57,16 +58,6 @@ export interface UniHttpRequestOptions
     | string
     | boolean
     | ((options: UniHttpRequestOptions) => string | boolean | undefined);
-
-  /**
-   * 日志输出实列
-   */
-  logging?: LoggingInterface;
-
-  /**
-   * 初始化完成标识
-   */
-  init?: Promise<void>;
 
   /**
    * 跳过初始化检查
@@ -255,8 +246,8 @@ export class UniHttpRequest {
   private readonly requestTaskController: RequestTaskController;
 
   constructor(config: UniHttpRequestCommonOptions = {}) {
-    this.logging = config.logging ?? window.console;
-    this.initialized = config.init ?? Promise.resolve();
+    this.logging = getLoggingInstance();
+    this.initialized = getInitializationInstance().promise;
     this.config = Object.freeze(config);
     this.requestTaskController = new RequestTaskController();
   }
@@ -551,14 +542,16 @@ class Request {
 
   install(app: App, options: UniHttpRequestCommonOptions = {}) {
     if (!Request.instance) {
-      Request.instance = new UniHttpRequest({
-        ...options,
-        init: options.init ?? app.config.globalProperties.$init.promise,
-        logging: options.logging ?? app.config.globalProperties.$logging,
-      });
+      Request.instance = new UniHttpRequest(options);
     }
 
-    app.config.globalProperties.$request = Request.instance;
+    Object.defineProperty(app.config.globalProperties, "$request", {
+      get() {
+        return Request.instance;
+      },
+      enumerable: true,
+      configurable: false,
+    });
   }
 }
 

@@ -6,6 +6,7 @@ import {
 } from "./cache/cache";
 import {
   createInitialization,
+  getInitializationInstance,
   type InitializationSetup,
 } from "./initialization/initialization";
 import { createLogging } from "./logging/logging";
@@ -13,7 +14,7 @@ import { createRequest, type RequestOptions } from "./request/request";
 import { createRouter, type RouterOptions } from "./router/router";
 import { createStore, type StoreOptions } from "./store/store";
 
-export type AppConfigOptions = {
+export type AppConfig = {
   /**
    * 全局缓存配置
    */
@@ -40,29 +41,33 @@ export type AppConfigOptions = {
   router?: RouterOptions;
 };
 
-export function defineOptions(options: AppConfigOptions) {
-  return options;
+export function defineConfig(config: AppConfig | ((app: App) => AppConfig)) {
+  return config;
 }
 
-export function registerPlugins(app: App, options: AppConfigOptions) {
+export function registerPlugins(
+  app: App,
+  config: AppConfig | ((app: App) => AppConfig),
+) {
+  // 解析 app config
+  const appConfig = typeof config === "function" ? config(app) : config;
+
   // 缓存
-  app.use(createCache(), options.cache);
+  app.use(createCache(), appConfig.cache);
   // 日志
   app.use(createLogging());
   // 初始化
-  app.use(createInitialization(), options.init);
+  app.use(createInitialization(), appConfig.init);
   // 状态
-  app.use(createStore(), options.store);
+  app.use(createStore(), appConfig.store);
   // 请求
-  app.use(createRequest(), options.request);
+  app.use(createRequest(), appConfig.request);
   // 路由
-  app.use(createRouter(), options.router);
+  app.use(createRouter(), appConfig.router);
 
-  const callInit = () => {
-    app.config.globalProperties.$init.run();
-  };
-
-  const registerInitSetup = () => {};
+  const initializationInstance = getInitializationInstance();
+  const callInit = initializationInstance.run;
+  const registerInitSetup = initializationInstance.register;
 
   return {
     callInit,

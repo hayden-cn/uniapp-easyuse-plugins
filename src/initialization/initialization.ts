@@ -1,5 +1,5 @@
 import type { App } from "vue";
-import type { LoggingInterface } from "../logging/logging";
+import { getLoggingInstance, type LoggingInterface } from "../logging/logging";
 
 export type InitializationSetup = () => void | Promise<void>;
 
@@ -12,10 +12,6 @@ export type InitializationOptionOrSetup =
   | InitializationSetupObject
   | InitializationSetup;
 
-interface InitializationOption {
-  logging: LoggingInterface;
-}
-
 class UniInitialization {
   promise: Promise<void>;
 
@@ -27,17 +23,21 @@ class UniInitialization {
 
   private logging: LoggingInterface;
 
-  constructor(options: InitializationOption) {
+  constructor() {
     this.promise = new Promise((resolve) => {
       this.promiseResolve = resolve;
     });
 
-    this.logging = options.logging;
+    this.logging = getLoggingInstance();
   }
 
-  private printWarn(...data: any[]) {}
+  private printWarn(...data: any[]) {
+    this.logging.warn("[Initialization]", ...data);
+  }
 
-  private printError(...data: any[]) {}
+  private printError(...data: any[]) {
+    this.logging.error("[Initialization]", ...data);
+  }
 
   register(fn: InitializationOptionOrSetup) {
     const task: InitializationSetupObject =
@@ -80,9 +80,7 @@ class Initialization {
 
   install(app: App, options?: InitializationOptionOrSetup) {
     if (!Initialization.instance) {
-      Initialization.instance = new UniInitialization({
-        logging: app.config.globalProperties.$logging,
-      });
+      Initialization.instance = new UniInitialization();
     }
 
     const defaultSetup = options || { setup: () => {} };
@@ -100,6 +98,10 @@ class Initialization {
 
 export function createInitialization() {
   return new Initialization();
+}
+
+export function getInitializationInstance() {
+  return Initialization.instance;
 }
 
 export function useInit() {

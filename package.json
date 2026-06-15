@@ -1,5 +1,6 @@
 {
   "name": "uniapp-easyuse-plugins",
+  "version": "1.0.0",
   "description": "Uniapp easyuse plugin, include cache, logging, initialization, etc.",
   "keywords": [
     "uniapp",
@@ -31,7 +32,8 @@
     "global.d.ts"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --splitting --clean --publicDir public"
+    "build": "tsup src/index.ts --format cjs,esm --dts --splitting --clean --publicDir public",
+    "prepublish": "pnpm run build"
   },
   "devEngines": {
     "packageManager": {

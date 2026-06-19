@@ -49,9 +49,9 @@ class Logging {
 }
 
 export function getLoggingInstance() {
-  return new Proxy(Logging.instance, {
-    get(target, p, receiver) {
-      return Reflect.get(target, p, receiver);
+  return new Proxy({} as UniLogging, {
+    get(_, p, receiver) {
+      return Reflect.get(Logging.instance, p, receiver);
     },
   });
 }

@@ -560,7 +560,7 @@ export function createRequest() {
 }
 
 export function getUniHttpRequestInstance() {
-  return new Proxy(Request.instance, {
+  return new Proxy({} as UniHttpRequest, {
     get(_, p, receiver) {
       return Reflect.get(Request.instance, p, receiver);
     },

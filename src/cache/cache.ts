@@ -88,9 +88,9 @@ class Cache {
 }
 
 export function getCacheInstance(): UniCache {
-  return new Proxy(Cache.instance, {
-    get(target, p, receiver) {
-      return Reflect.get(target, p, receiver);
+  return new Proxy({} as UniCache, {
+    get(_, p, receiver) {
+      return Reflect.get(Cache.instance, p, receiver);
     },
   });
 }

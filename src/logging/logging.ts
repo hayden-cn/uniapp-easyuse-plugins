@@ -4,29 +4,29 @@ type LoggingType = "info" | "warn" | "error" | "debug" | "log";
 
 export type LoggingInterface = Pick<typeof window.console, LoggingType>;
 
-class UniLogging implements LoggingInterface {
-  private printer(type: LoggingType, message?: any, ...optionalParams: any[]) {
-    console[type](message, ...optionalParams);
-  }
+function print(type: LoggingType, message?: any, ...optionalParams: any[]) {
+  console[type](message, ...optionalParams);
+}
 
+class UniLogging implements LoggingInterface {
   info(message?: any, ...optionalParams: any[]) {
-    this.printer("info", message, ...optionalParams);
+    print("info", message, ...optionalParams);
   }
 
   warn(message?: any, ...optionalParams: any[]) {
-    this.printer("warn", message, ...optionalParams);
+    print("warn", message, ...optionalParams);
   }
 
   error(message?: any, ...optionalParams: any[]) {
-    this.printer("error", message, ...optionalParams);
+    print("error", message, ...optionalParams);
   }
 
   debug(message?: any, ...optionalParams: any[]) {
-    this.printer("debug", message, ...optionalParams);
+    print("debug", message, ...optionalParams);
   }
 
   log(message?: any, ...optionalParams: any[]) {
-    this.printer("log", message, ...optionalParams);
+    print("log", message, ...optionalParams);
   }
 }
 

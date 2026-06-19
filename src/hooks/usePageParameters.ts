@@ -1,4 +1,5 @@
 import { onLoad } from "@dcloudio/uni-app";
+import type { Ref } from "vue";
 import { ref } from "vue";
 
 const stringifyQueryParams = (params: Record<string, any>) => {
@@ -10,8 +11,8 @@ const stringifyQueryParams = (params: Record<string, any>) => {
   return results.join("&");
 };
 
-const parseQueryString = (options: Record<string, string>) => {
-  const results: Record<string, string> = {};
+const parseQueryString = (options: Record<string, any>) => {
+  const results: Record<string, any> = {};
   for (const [key, value] of Object.entries(options)) {
     try {
       const parsed = JSON.parse(value);
@@ -39,11 +40,11 @@ export const useSimpleQueryString = () => {
  */
 export const usePageParameters = <T extends AnyObject = AnyObject>(
   callback?: (options: T) => void,
-) => {
-  const pageParameters = ref<T>({} as T);
+): Ref<T> => {
+  const pageParameters = ref<T>({} as T) as Ref<T>;
 
   onLoad((options) => {
-    pageParameters.value = parseQueryString(options || {});
+    pageParameters.value = parseQueryString(options || {}) as T;
     callback?.(pageParameters.value);
   });
 

@@ -70,8 +70,12 @@ export function registerPlugins(
   app.use(createRouter(), appConfig.router);
 
   const initializationInstance = getInitializationInstance();
-  const callInit = initializationInstance.run;
-  const registerInitSetup = initializationInstance.register;
+  const callInit: typeof initializationInstance.run = () => {
+    return initializationInstance.run();
+  };
+  const registerInitSetup: typeof initializationInstance.register = (fn) => {
+    return initializationInstance.register(fn);
+  };
 
   return {
     callInit,

@@ -46,7 +46,7 @@
     "@biomejs/biome": "^2.4.16",
     "@dcloudio/types": "^3.4.31",
     "@dcloudio/uni-app": "3.0.0-alpha-5010320260611001",
-    "typescript": "^6.0.3",
+    "typescript": "^5.9.2",
     "unbuild": "^3.6.1",
     "vue": "^3.4.21"
   },

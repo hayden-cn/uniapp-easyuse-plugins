@@ -49,9 +49,9 @@ export function defineConfig(config: AppConfig | ((app: App) => AppConfig)) {
   return config;
 }
 
-export function registerPlugins(
-  app: App,
-  config: AppConfig | ((app: App) => AppConfig),
+export function registerPlugins<T extends Element = Element>(
+  app: App<T>,
+  config: AppConfig | ((app: App<T>) => AppConfig),
 ) {
   // 解析 app config
   const appConfig = typeof config === "function" ? config(app) : config;

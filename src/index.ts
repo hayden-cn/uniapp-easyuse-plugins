@@ -97,5 +97,6 @@ export {
   useSelectorQuery,
 } from "./hooks/useSelectorQuery";
 export { useInit } from "./initialization/initialization";
+export type { UniHttpRequestOptions } from "./request/request";
 export { useRoute } from "./router/router";
 export { useStore } from "./store/store";

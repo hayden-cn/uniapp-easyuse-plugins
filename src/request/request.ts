@@ -470,8 +470,8 @@ export class UniHttpRequest {
    * @param options
    * @returns
    */
-  async get<T>(url: string, options?: QuickRequestOptionWithoutUrl): Promise<T>;
   async get<T>(options: QuickRequestOption): Promise<T>;
+  async get<T>(url: string, options?: QuickRequestOptionWithoutUrl): Promise<T>;
   async get<T>(
     urlOrOption: string | QuickRequestOption,
     alternativeOptions: QuickRequestOptionWithoutUrl = {},
@@ -486,11 +486,11 @@ export class UniHttpRequest {
    * @param options
    * @returns
    */
+  async post<T>(options: QuickRequestOption): Promise<T>;
   async post<T>(
     url: string,
     options?: QuickRequestOptionWithoutUrl,
   ): Promise<T>;
-  async post<T>(options: QuickRequestOption): Promise<T>;
   async post<T>(
     urlOrOption: string | QuickRequestOption,
     alternativeOptions: QuickRequestOptionWithoutUrl = {},
@@ -505,8 +505,8 @@ export class UniHttpRequest {
    * @param options
    * @returns
    */
-  async put<T>(url: string, options?: QuickRequestOptionWithoutUrl): Promise<T>;
   async put<T>(options: QuickRequestOption): Promise<T>;
+  async put<T>(url: string, options: QuickRequestOptionWithoutUrl): Promise<T>;
   async put<T>(
     urlOrOption: string | QuickRequestOption,
     alternativeOptions: QuickRequestOptionWithoutUrl = {},
@@ -521,11 +521,11 @@ export class UniHttpRequest {
    * @param options
    * @returns
    */
+  async delete<T>(options: QuickRequestOption): Promise<T>;
   async delete<T>(
     url: string,
-    options?: QuickRequestOptionWithoutUrl,
+    options: QuickRequestOptionWithoutUrl,
   ): Promise<T>;
-  async delete<T>(options: QuickRequestOption): Promise<T>;
   async delete<T>(
     urlOrOption: string | QuickRequestOption,
     alternativeOptions: QuickRequestOptionWithoutUrl = {},

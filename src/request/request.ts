@@ -5,14 +5,18 @@ import { castArray, cloneDeep, merge } from "../utils";
 
 export type RequestId = symbol | string | number;
 
+type OmitBy<T, K extends keyof T> = Omit<T, K>;
+type PickBy<T, K extends keyof T> = Pick<T, K>;
+
+type UniAppRequestOptions = OmitBy<
+  UniApp.RequestOptions,
+  "success" | "fail" | "complete"
+>;
+
 /**
  * UniHttpRequest 请求配置
  */
-export interface UniHttpRequestOptions
-  /**
-   * 使用 Promise 调用，需要排除回调参数
-   */
-  extends Omit<UniApp.RequestOptions, "success" | "fail" | "complete"> {
+export interface UniHttpRequestOptions extends UniAppRequestOptions {
   /**
    * 基础请求路径
    */
@@ -36,6 +40,8 @@ export interface UniHttpRequestOptions
 
   /**
    * 使用 FormData 作为请求体
+   *
+   * 手工将 data 内容从 json 格式转化为 FormData 格式
    */
   useMultipartFormData?: boolean;
 
@@ -71,7 +77,57 @@ export interface UniHttpRequestOptions
 }
 
 /**
- * Request 控制器
+ * 请求拦截器
+ */
+export interface InterceptOptions {
+  /**
+   * 请求拦截
+   */
+  request?: (options: UniHttpRequestOptions) => UniHttpRequestOptions;
+  /**
+   * 响应拦截
+   */
+  response?: (
+    response: UniApp.RequestSuccessCallbackResult,
+    options: UniHttpRequestOptions,
+  ) => UniApp.RequestSuccessCallbackResult;
+}
+
+/**
+ * 快捷请求配置
+ */
+type QuickRequestOption = OmitBy<UniHttpRequestOptions, "method">;
+
+/**
+ * 快捷请求配置，无 url 参数
+ */
+type QuickRequestOptionWithoutUrl = OmitBy<QuickRequestOption, "url">;
+
+/**
+ * 文件上传请求配置
+ */
+type UploadFileOption = OmitBy<UniHttpRequestOptions, "method"> &
+  PickBy<
+    UniApp.UploadFileOption,
+    "fileType" | "file" | "filePath" | "name" | "files" | "formData"
+  >;
+
+/**
+ * 文件下载请求配置
+ */
+type DownloadFileOption = OmitBy<UniHttpRequestOptions, "method"> &
+  PickBy<UniApp.DownloadFileOption, "filePath">;
+
+/**
+ * 请求全局配置
+ */
+type UniHttpRequestCommonOptions = OmitBy<
+  UniHttpRequestOptions,
+  "url" | "method" | "data" | "useMultipartFormData" | "skipInitialized"
+>;
+
+/**
+ * Request 控制器状态存储
  */
 class RequestController {
   #status: "pending" | "fulfilled" | "rejected" = "pending";
@@ -89,6 +145,9 @@ class RequestController {
     this.requestId = requestId;
   }
 
+  /**
+   * 检查请求任务状态
+   */
   checkStatus() {
     if (this.#status === "rejected") {
       const cause =
@@ -107,6 +166,12 @@ class RequestController {
 
   private requestTask?: UniApp.RequestTask;
 
+  /**
+   * 连接请求任务
+   *
+   * @param requestTask
+   * @param options
+   */
   connect(
     requestTask: UniApp.RequestTask,
     options?: {
@@ -127,6 +192,9 @@ class RequestController {
     }
   }
 
+  /**
+   * 标记请求任务已完成
+   */
   done() {
     if (this.#status === "pending") {
       this.#status = "fulfilled";
@@ -134,6 +202,11 @@ class RequestController {
     }
   }
 
+  /**
+   * 标记请求任务被取消
+   *
+   * @param error
+   */
   abort(error?: Error | string) {
     if (this.#status === "pending") {
       this.#error = error;
@@ -145,7 +218,7 @@ class RequestController {
 }
 
 /**
- *
+ * Request 任务控制器
  */
 export class RequestTaskController {
   private controllerCollection: Map<RequestId, RequestController> = new Map();
@@ -185,41 +258,6 @@ export class RequestTaskController {
     }
   }
 }
-
-/**
- * 请求拦截器
- */
-export interface InterceptOptions {
-  /**
-   * 请求拦截
-   */
-  request?: (options: UniHttpRequestOptions) => UniHttpRequestOptions;
-  /**
-   * 响应拦截
-   */
-  response?: (
-    response: UniApp.RequestSuccessCallbackResult,
-    options: UniHttpRequestOptions,
-  ) => UniApp.RequestSuccessCallbackResult;
-}
-
-/**
- * 快捷请求配置
- */
-type QuickRequestOption = Omit<UniHttpRequestOptions, "method">;
-
-/**
- * 快捷请求配置，无 url 参数
- */
-type QuickRequestOptionWithoutUrl = Omit<QuickRequestOption, "url">;
-
-/**
- * 请求全局配置
- */
-type UniHttpRequestCommonOptions = Omit<
-  UniHttpRequestOptions,
-  "url" | "method" | "data" | "skipInitialized"
->;
 
 /**
  * uniapp request 封装
@@ -311,24 +349,25 @@ export class UniHttpRequest {
   }
 
   /**
-   * request 核心封装
+   * 准备请求，处理公共逻辑
    *
-   * @param options
-   * @returns
+   * @param options 请求选项
+   * @returns 准备好的请求数据
    */
-  async httpRequest<T>(options: UniHttpRequestOptions) {
+  private async prepareRequest(options: UniHttpRequestOptions) {
     const controller = this.requestTaskController.createController(options);
 
     const skipInitialized = options.skipInitialized ?? false;
     if (!skipInitialized) {
       await this.initialized;
-      // 检查任务是否被取消
       controller.checkStatus();
     }
+
     const config = cloneDeep(this.config);
     const custom = cloneDeep(options);
     let requestOptions: UniHttpRequestOptions = merge({}, config, custom);
     requestOptions.header ??= {};
+
     // 类似于洋葱中间件拦截器，顺序如下：
     // 全局请求拦截 -> 独立请求拦截 -> 请求 -> 独立响应拦截 -> 全局响应拦截
     if (config.interceptors?.request) {
@@ -337,6 +376,7 @@ export class UniHttpRequest {
     if (custom.interceptors?.request) {
       requestOptions = custom.interceptors.request(requestOptions);
     }
+
     // 解析 url 查询参数
     let requestUrl = requestOptions.url;
     const [relativeUrl, searchString] = requestUrl.split("?");
@@ -352,17 +392,15 @@ export class UniHttpRequest {
 
       for (const [index, param] of arrayValues.entries()) {
         if (isArrayValue === false || typeof indexes !== "boolean") {
-          // 非数组类型或无需索引的查询参数
           searchParams.push(`${key}=${encodeURIComponent(param)}`);
         } else if (indexes === true) {
-          // 设置数组元素索引
           searchParams.push(`${key}[${index}]=${encodeURIComponent(param)}`);
         } else if (indexes === false) {
-          // 设置数组元素索引，但设置为空索引
           searchParams.push(`${key}[]=${encodeURIComponent(param)}`);
         }
       }
     }
+
     // 添加 url 查询参数
     const queryString = searchParams.filter(Boolean).join("&");
     requestUrl = [relativeUrl, queryString].filter(Boolean).join("?");
@@ -371,57 +409,204 @@ export class UniHttpRequest {
     const absoluteUrlRegexp = /^(https?|ftp|file|wss?):\/\//i;
     const prefixUrl = absoluteUrlRegexp.test(requestUrl) ? "" : baseUrl;
     requestOptions.url = `${prefixUrl}${requestUrl}`;
+
     if (useMultipartFormData) {
       this.parseMultipartFormData(requestOptions);
     }
+
+    // 解析竞态条件
+    const raceCondition =
+      this.parseRaceCondition({
+        ...requestOptions,
+        raceCondition: custom.raceCondition,
+      }) ??
+      this.parseRaceCondition({
+        ...requestOptions,
+        raceCondition: config.raceCondition,
+      });
+
+    // 在实际请求前，再次检查任务是否被取消
+    controller.checkStatus();
+
+    return { controller, config, custom, requestOptions, raceCondition };
+  }
+
+  /**
+   * 处理响应拦截器
+   */
+  private applyResponseInterceptors<T>(
+    response: T,
+    requestOptions: UniHttpRequestOptions,
+    custom: UniHttpRequestOptions,
+    config: UniHttpRequestCommonOptions,
+  ): T {
+    let result = cloneDeep(response);
+    if (custom.interceptors?.response) {
+      result = custom.interceptors.response(
+        result as unknown as UniApp.RequestSuccessCallbackResult,
+        requestOptions,
+      ) as unknown as T;
+    }
+    if (config.interceptors?.response) {
+      result = config.interceptors.response(
+        result as unknown as UniApp.RequestSuccessCallbackResult,
+        requestOptions,
+      ) as unknown as T;
+    }
+    return result;
+  }
+
+  /**
+   * 创建请求错误
+   */
+  private createRequestError(
+    err: UniApp.GeneralCallbackResult,
+    failName: string,
+    abortName: string,
+    fallbackMessage: string,
+  ): Error {
+    const error = new Error(err.errMsg || fallbackMessage);
+    error.name = failName;
+    if (err.errMsg?.endsWith(":fail")) {
+      error.name = failName;
+    }
+    if (err.errMsg?.endsWith(":abort")) {
+      error.name = abortName;
+    }
+    return error;
+  }
+
+  /**
+   * 通用 http 请求
+   *
+   * @param options
+   * @returns
+   */
+  async httpRequest<T>(options: UniHttpRequestOptions) {
+    const { controller, config, custom, requestOptions, raceCondition } =
+      await this.prepareRequest(options);
+
     return new Promise<T>((resolve, reject) => {
-      // 解析竞态条件
-      const raceCondition =
-        this.parseRaceCondition({
-          ...requestOptions,
-          raceCondition: custom.raceCondition,
-        }) ??
-        this.parseRaceCondition({
-          ...requestOptions,
-          raceCondition: config.raceCondition,
-        });
-      // 在实际请求前，再次检查任务是否被取消
-      controller.checkStatus();
       const requestTask = uni.request({
         ...requestOptions,
         success: (res) => {
-          let response = cloneDeep(res);
-          if (custom.interceptors?.response) {
-            response = custom.interceptors.response(response, requestOptions);
-          }
-          if (config.interceptors?.response) {
-            response = config.interceptors.response(response, requestOptions);
-          }
+          const response = this.applyResponseInterceptors(
+            res,
+            requestOptions,
+            custom,
+            config,
+          );
           if (response.errMsg === "request:ok") {
-            const responseData = response.data as T;
-            resolve(responseData);
+            resolve(response.data as T);
           } else {
             reject(new Error(response.errMsg || "请求失败，未知错误"));
           }
         },
         fail: (err) => {
-          const requestMethod = options.method;
-          const requestUrl = options.url;
-          const error = new Error(`${requestMethod} ${requestUrl}`);
-          error.name = "UniRequestError";
-          if (err.errMsg === "request:fail") {
-            error.name = "RequestFailError";
-          }
-          if (err.errMsg === "request:abort") {
-            error.name = "RequestAbortError";
-          }
-          reject(error);
+          reject(
+            this.createRequestError(
+              err,
+              "RequestFailError",
+              "RequestAbortError",
+              "请求失败",
+            ),
+          );
         },
         complete: () => {
           controller.done();
         },
       });
       controller.connect(requestTask, { raceCondition });
+    });
+  }
+
+  /**
+   * 文件上传请求
+   *
+   * @param options
+   * @returns
+   */
+  async uploadFile<T>(options: UploadFileOption) {
+    const { controller, config, custom, requestOptions, raceCondition } =
+      await this.prepareRequest(options);
+
+    return new Promise<T>((resolve, reject) => {
+      const requestTask = uni.uploadFile({
+        ...requestOptions,
+        success: (res) => {
+          const response = this.applyResponseInterceptors(
+            res,
+            requestOptions,
+            custom,
+            config,
+          );
+          if (response.errMsg === "request:ok") {
+            resolve(response.data as T);
+          } else {
+            reject(new Error(response.errMsg || "请求失败，未知错误"));
+          }
+        },
+        fail: (err) => {
+          reject(
+            this.createRequestError(
+              err,
+              "UploadFailError",
+              "UploadAbortError",
+              "上传失败",
+            ),
+          );
+        },
+        complete: () => {
+          controller.done();
+        },
+      });
+      controller.connect(requestTask, { raceCondition });
+    });
+  }
+
+  /**
+   * 文件下载请求
+   *
+   * @param options
+   * @returns
+   */
+  async downloadFile(options: DownloadFileOption) {
+    const { controller, config, custom, requestOptions, raceCondition } =
+      await this.prepareRequest(options);
+
+    return new Promise<UniApp.DownloadSuccessData>((resolve, reject) => {
+      const requestTask = uni.downloadFile({
+        ...requestOptions,
+        success: (res) => {
+          const response = this.applyResponseInterceptors(
+            res,
+            requestOptions,
+            custom,
+            config,
+          );
+          if (response.errMsg === "request:ok") {
+            resolve(response);
+          } else {
+            reject(new Error(response.errMsg || "请求失败，未知错误"));
+          }
+        },
+        fail: (err) => {
+          reject(
+            this.createRequestError(
+              err,
+              "DownloadFailError",
+              "DownloadAbortError",
+              "下载失败",
+            ),
+          );
+        },
+        complete: () => {
+          controller.done();
+        },
+      });
+      controller.connect(requestTask as unknown as UniApp.RequestTask, {
+        raceCondition,
+      });
     });
   }
 

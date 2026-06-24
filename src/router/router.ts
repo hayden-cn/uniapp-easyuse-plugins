@@ -77,6 +77,12 @@ class UniRouter {
       const route = page.path;
       $pagesMap[route] = page;
     }
+    for (const subPackage of appConfig.subPackages ?? []) {
+      for (const page of subPackage.pages) {
+        const route = `${subPackage.root}/${page.path}`;
+        $pagesMap[route] = { ...page, path: route };
+      }
+    }
     this.pagesMap = Object.freeze($pagesMap);
 
     this.homePageRoute = this.pages[0].path;

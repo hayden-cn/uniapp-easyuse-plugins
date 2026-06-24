@@ -55,9 +55,15 @@ declare global {
     needLogin: string[];
   }
 
+  interface UniSubPackage {
+    root: string;
+    pages: UniPage[];
+  }
+
   interface UniAppPagesConfig {
     globalStyle?: UniPageStyle;
     pages?: UniPage[];
+    subPackages?: UniSubPackage[];
     easycom?: UniEasycom;
     tabBar?: UniTabBar;
     uniIdRouter?: UniIdRouter;

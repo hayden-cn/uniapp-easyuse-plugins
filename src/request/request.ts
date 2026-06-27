@@ -540,7 +540,7 @@ export class UniHttpRequest {
             custom,
             config,
           );
-          if (response.errMsg === "request:ok") {
+          if (response.errMsg === "uploadFile:ok") {
             resolve(response.data as T);
           } else {
             reject(new Error(response.errMsg || "请求失败，未知错误"));
@@ -584,7 +584,7 @@ export class UniHttpRequest {
             custom,
             config,
           );
-          if (response.errMsg === "request:ok") {
+          if (response.errMsg === "downloadFile:ok") {
             resolve(response);
           } else {
             reject(new Error(response.errMsg || "请求失败，未知错误"));

@@ -534,6 +534,13 @@ export class UniHttpRequest {
       const requestTask = uni.uploadFile({
         ...requestOptions,
         success: (res) => {
+          const contentType = res.header?.["Content-Type"];
+          if (contentType?.includes("application/json")) {
+            try {
+              const data = res.data;
+              res.data = typeof data === "string" ? JSON.parse(data) : data;
+            } catch {}
+          }
           const response = this.applyResponseInterceptors(
             res,
             requestOptions,

@@ -89,8 +89,9 @@ export const request = getUniHttpRequestInstance();
 
 export { useEventChannel } from "./hooks/useEventChannel";
 export {
+  parseQueryString,
+  stringifyQueryParams,
   usePageParameters,
-  useSimpleQueryString,
 } from "./hooks/usePageParameters";
 export {
   useGlobalSelectorQuery,

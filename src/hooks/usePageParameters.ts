@@ -2,7 +2,7 @@ import { onLoad } from "@dcloudio/uni-app";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
-const stringifyQueryParams = (params: Record<string, any>) => {
+export const stringifyQueryParams = (params: Record<string, any>) => {
   const results: string[] = [];
   for (const [key, value] of Object.entries(params)) {
     const parsed = typeof value === "object" ? JSON.stringify(value) : value;
@@ -11,7 +11,7 @@ const stringifyQueryParams = (params: Record<string, any>) => {
   return results.join("&");
 };
 
-const parseQueryString = (options: Record<string, any>) => {
+export const parseQueryString = (options: Record<string, any>) => {
   const results: Record<string, any> = {};
   for (const [key, value] of Object.entries(options)) {
     try {
@@ -22,10 +22,6 @@ const parseQueryString = (options: Record<string, any>) => {
     }
   }
   return results;
-};
-
-export const useSimpleQueryString = () => {
-  return { stringifyQueryParams, parseQueryString };
 };
 
 /**

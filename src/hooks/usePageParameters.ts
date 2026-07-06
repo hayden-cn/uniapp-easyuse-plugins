@@ -15,7 +15,10 @@ export const parseQueryString = (options: Record<string, any>) => {
   const results: Record<string, any> = {};
   for (const [key, value] of Object.entries(options)) {
     try {
-      const parsed = JSON.parse(value);
+      let parsed = JSON.parse(value);
+      if (/^\d{15,}$/.test(value)) {
+        parsed = value;
+      }
       results[key] = parsed;
     } catch {
       results[key] = value;

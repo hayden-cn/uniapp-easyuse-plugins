@@ -2,39 +2,25 @@ import { getCurrentInstance, onMounted, ref } from "vue";
 
 declare module "vue" {
   interface ComponentCustomProperties {
-    getOpenerEventChannel: () => UniNamespace.EventChannel;
+    getOpenerEventChannel: () => UniApp.EventChannel;
   }
 }
 
 export const useEventChannel = (
-  effect?: (eventChannel: UniNamespace.EventChannel) => void,
-): UniNamespace.EventChannel => {
-  const $eventChannel = ref<UniNamespace.EventChannel>();
+  effect?: (eventChannel: UniApp.EventChannel) => void,
+): UniApp.EventChannel => {
+  const $eventChannel = ref<UniApp.EventChannel>();
 
-  const assetEventChannel = () => {
-    if ($eventChannel.value) {
-      console.warn(`未获取到 eventChannel 实例`);
-    }
-  };
-
-  const eventChannel = {
-    emit: (eventName: string, data?: any) => {
-      assetEventChannel();
-      $eventChannel.value?.emit(eventName, data);
+  const eventChannel = new Proxy({} as UniApp.EventChannel, {
+    get(_, p, receiver) {
+      if ($eventChannel.value) {
+        return Reflect.get($eventChannel.value, p, receiver);
+      }
+      return (key: string) => {
+        console.warn(`${p.toString()}("${key}") 未获取到 eventChannel 实例`);
+      };
     },
-    on: (eventName: string, callback: (data: any) => void) => {
-      assetEventChannel();
-      $eventChannel.value?.on(eventName, callback);
-    },
-    off: (eventName: string, callback?: (data: any) => void) => {
-      assetEventChannel();
-      $eventChannel.value?.off(eventName, callback);
-    },
-    once: (eventName: string, callback: (data: any) => void) => {
-      assetEventChannel();
-      $eventChannel.value?.once(eventName, callback);
-    },
-  };
+  });
 
   onMounted(() => {
     const instance = getCurrentInstance()?.proxy;

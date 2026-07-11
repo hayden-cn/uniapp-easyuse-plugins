@@ -2,26 +2,34 @@ import { onLoad } from "@dcloudio/uni-app";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
-export const stringifyQueryParams = (params: Record<string, any>) => {
+export const stringifyQueryParams = (params: Record<string, any>): string => {
   const results: string[] = [];
   for (const [key, value] of Object.entries(params)) {
-    const parsed = typeof value === "object" ? JSON.stringify(value) : value;
-    results.push(`${key}=${parsed}`);
+    if (value === undefined || value === null) continue;
+    const serialized =
+      typeof value === "object" ? JSON.stringify(value) : String(value);
+    results.push(
+      `${encodeURIComponent(key)}=${encodeURIComponent(serialized)}`,
+    );
   }
   return results.join("&");
 };
 
-export const parseQueryString = (options: Record<string, any>) => {
+export const parseQueryString = (
+  options: Record<string, string>,
+): Record<string, any> => {
   const results: Record<string, any> = {};
   for (const [key, value] of Object.entries(options)) {
-    try {
-      let parsed = JSON.parse(value);
-      if (/^\d{15,}$/.test(value)) {
-        parsed = value;
+    const decodeKey = decodeURIComponent(key);
+    const decodeValue = decodeURIComponent(value);
+    if (/^\d{15,}$/.test(decodeValue)) {
+      results[decodeKey] = decodeValue;
+    } else {
+      try {
+        results[decodeKey] = JSON.parse(decodeValue);
+      } catch {
+        results[decodeKey] = decodeValue;
       }
-      results[key] = parsed;
-    } catch {
-      results[key] = value;
     }
   }
   return results;

@@ -1,6 +1,6 @@
 {
   "name": "uniapp-easyuse-plugins",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Uniapp easyuse plugin, include cache, logging, initialization, etc.",
   "keywords": [
     "uniapp",
